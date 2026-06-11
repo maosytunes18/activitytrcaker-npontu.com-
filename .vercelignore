@@ -1,0 +1,12 @@
+/vendor
+/node_modules
+/tests
+/storage/logs/*.log
+/database/database.sqlite
+.env
+.env.bak
+.git
+test-plan.md
+test-report.md
+login.png
+google_error.png
