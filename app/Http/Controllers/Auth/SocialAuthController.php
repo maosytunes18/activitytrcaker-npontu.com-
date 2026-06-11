@@ -13,8 +13,16 @@ class SocialAuthController extends \Illuminate\Routing\Controller
 
     public function redirectToGoogle(): RedirectResponse
     {
-        // Socialite config + scopes are handled by the provider; keep this minimal.
-        return Socialite::driver('google')->redirect();
+        // Fall back to the app's callback route when GOOGLE_REDIRECT_URI is not set
+        // so the redirect_uri is always a fully-qualified URL Google accepts.
+        return Socialite::driver('google')
+            ->redirectUrl($this->callbackUrl())
+            ->redirect();
+    }
+
+    private function callbackUrl(): string
+    {
+        return config('services.google.redirect') ?: route('google.callback');
     }
 
 
@@ -23,8 +31,11 @@ class SocialAuthController extends \Illuminate\Routing\Controller
     {
         try {
             // Use normal (session-based) OAuth. `stateless()` can break verification flows
-            // because the state/csrf handling is skipped.
-            $googleUser = Socialite::driver('google')->user();
+            // because the state/csrf handling is skipped. The redirect URL must match the
+            // one used during the redirect step for the token exchange to succeed.
+            $googleUser = Socialite::driver('google')
+                ->redirectUrl($this->callbackUrl())
+                ->user();
 
         } catch (\Throwable $e) {
             Log::error('Google OAuth callback failed', [
